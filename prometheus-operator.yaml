@@ -1,0 +1,75 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  chart: stable/prometheus-operator
+  targetNamespace: monitoring
+  set:
+    # Rbac
+    global:
+      rbac:
+        create: true
+
+    prometheusOperator:
+      createCustomResource: true
+
+    # Prometheus configuration
+    prometheus:
+      ingress:
+        enabled: false
+      prometheusSpec:
+        serviceMonitorNamespaceSelectorNilUsesHelmValues: false
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              storageClassName: local-path
+              resources:
+                requests:
+                  storage: 30Gi
+
+    # Grafana configuration
+    grafana:
+      adminPassword: admin
+      ingress:
+        enabled: true
+        hosts:
+          - grafana.spankmewithcat6.de
+      persistence:
+        enabled: true
+        storageClassName: local-path
+        accessModes:
+          - ReadWriteOnce
+        size: 5Gi
+
+    # Alertmanager
+    alertmanager:
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              storageClassName: local-path
+              resources:
+                requests:
+                  storage: 5Gi
+
+    # Kubelet http instaed of https
+    kubelet:
+      serviceMonitor:
+        https: true
+
+    kubeApiServer:
+      relabelings:
+      - sourceLabels:
+        - __meta_kubernetes_namespace
+        - __meta_kubernetes_service_name
+        - __meta_kubernetes_endpoint_port_name
+        action: keep
+        regex: default;kubernetes;https
+      - targetLabel: __address__
+        replacement: kubernetes.default.svc:443
