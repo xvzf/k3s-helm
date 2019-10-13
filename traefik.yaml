@@ -1,0 +1,38 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  chart: stable/traefik
+  set:
+    rbac:
+      enabled: true
+
+    ssl:
+      enabled: true
+      enforced: true
+
+    metrics:
+      prometheus:
+        enabled: true
+      serviceMonitor:
+        enabled: true
+
+    acme:
+      enabled: true
+      email: "me@xvzf.tech"
+
+      onHostRule: true
+
+      staging: false
+      logging: true
+
+      challengeType: http-01
+
+      domains:
+        enabled: true
+
+      persistence:
+        enabled: true
+        storageClass: local-path
